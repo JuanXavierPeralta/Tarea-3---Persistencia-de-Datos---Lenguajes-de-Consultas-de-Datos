@@ -10,8 +10,6 @@ import java.time.LocalDateTime;
 import java.util.List;
 import com.latamairlines.entities.Pago;
 
-
-
 public class PagoDAO {
 
     private final EntityManagerFactory emf =

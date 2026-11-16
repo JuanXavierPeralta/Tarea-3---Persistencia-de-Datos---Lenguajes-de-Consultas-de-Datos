@@ -7,11 +7,12 @@ import jakarta.persistence.EntityManager;
 import jakarta.persistence.EntityManagerFactory;
 import jakarta.persistence.Persistence;
 import java.util.List;
+import java.math.BigDecimal;
 
 public class ReservaDAO {
 
-    private final EntityManagerFactory emf =
-            Persistence.createEntityManagerFactory("LatamAirlinesPU");
+    private final EntityManagerFactory emf
+            = Persistence.createEntityManagerFactory("LatamAirlinesPU");
 
     // CREAR RESERVA
     public void crearReserva(Reserva reserva) {
@@ -118,7 +119,7 @@ public class ReservaDAO {
 
     // ACTUALIZAR RESERVA
     public void actualizarReserva(int id, Cliente cliente,
-                                  Vuelo vuelo, int pasajeros) {
+            Vuelo vuelo, int pasajeros) {
 
         validarDatos(cliente, vuelo, pasajeros);
 
@@ -207,7 +208,7 @@ public class ReservaDAO {
 
     // VALIDAR DATOS DE LA RESERVA
     private void validarDatos(Cliente cliente, Vuelo vuelo,
-                              Integer pasajeros) {
+            Integer pasajeros) {
 
         if (cliente == null || cliente.getId() == null) {
             throw new IllegalArgumentException(
@@ -225,6 +226,82 @@ public class ReservaDAO {
             throw new IllegalArgumentException(
                     "El número de pasajeros debe ser mayor a cero"
             );
+        }
+    }
+
+    // CONSULTA JPQL 1: RESERVAS POR DESTINO CON PAGINACION
+    public List<Reserva> consultarPorDestino(
+            String destino, int pagina, int tamanoPagina) {
+
+        if (destino == null || destino.trim().isEmpty()) {
+            throw new IllegalArgumentException(
+                    "Ingrese un destino");
+        }
+
+        if (pagina < 1 || tamanoPagina < 1) {
+            throw new IllegalArgumentException(
+                    "La pagina y su tamaño deben ser mayores a cero");
+        }
+
+        EntityManager em = emf.createEntityManager();
+
+        try {
+            return em.createQuery(
+                    "SELECT r FROM Reserva r "
+                    + "JOIN FETCH r.cliente "
+                    + "JOIN FETCH r.vuelo "
+                    + "WHERE LOWER(r.vuelo.destino) LIKE :destino "
+                    + "ORDER BY r.id ASC",
+                    Reserva.class
+            )
+                    .setParameter(
+                            "destino",
+                            "%" + destino.trim().toLowerCase(
+                                    java.util.Locale.ROOT) + "%"
+                    )
+                    .setFirstResult((pagina - 1) * tamanoPagina)
+                    .setMaxResults(tamanoPagina)
+                    .getResultList();
+
+        } finally {
+            em.close();
+        }
+    }
+
+    // CONSULTA JPQL 2: RESERVAS POR MONTO PAGADO CON PAGINACION
+    public List<Reserva> consultarPorMontoPagado(
+            BigDecimal montoMinimo, int pagina, int tamanoPagina) {
+
+        if (montoMinimo == null
+                || montoMinimo.compareTo(BigDecimal.ZERO) < 0) {
+            throw new IllegalArgumentException(
+                    "El monto minimo no puede ser negativo");
+        }
+
+        if (pagina < 1 || tamanoPagina < 1) {
+            throw new IllegalArgumentException(
+                    "La pagina y su tamaño deben ser mayores a cero");
+        }
+
+        EntityManager em = emf.createEntityManager();
+
+        try {
+            return em.createQuery(
+                    "SELECT r FROM Reserva r "
+                    + "JOIN FETCH r.cliente "
+                    + "JOIN FETCH r.vuelo "
+                    + "JOIN FETCH r.pago "
+                    + "WHERE r.pago.monto >= :montoMinimo "
+                    + "ORDER BY r.id ASC",
+                    Reserva.class
+            )
+                    .setParameter("montoMinimo", montoMinimo)
+                    .setFirstResult((pagina - 1) * tamanoPagina)
+                    .setMaxResults(tamanoPagina)
+                    .getResultList();
+
+        } finally {
+            em.close();
         }
     }
 

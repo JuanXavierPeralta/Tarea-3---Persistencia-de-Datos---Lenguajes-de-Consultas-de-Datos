@@ -10,6 +10,9 @@ import jakarta.persistence.ManyToOne;
 import jakarta.persistence.OneToOne;
 import jakarta.persistence.SequenceGenerator;
 import jakarta.persistence.Table;
+import jakarta.persistence.OneToMany;
+import java.util.ArrayList;
+import java.util.List;
 
 @Entity
 @Table(name = "tb_reserva")
@@ -18,13 +21,13 @@ public class Reserva {
     // IDENTIFICADOR AUTOMATICO
     @Id
     @GeneratedValue(
-        strategy = GenerationType.SEQUENCE,
-        generator = "reserva_generator"
+            strategy = GenerationType.SEQUENCE,
+            generator = "reserva_generator"
     )
     @SequenceGenerator(
-        name = "reserva_generator",
-        sequenceName = "tb_reserva_seq",
-        allocationSize = 1
+            name = "reserva_generator",
+            sequenceName = "tb_reserva_seq",
+            allocationSize = 1
     )
     @Column(name = "pr_id", nullable = false)
     private Integer id;
@@ -47,12 +50,16 @@ public class Reserva {
     @OneToOne(mappedBy = "reserva")
     private Pago pago;
 
+    // UNA RESERVA PUEDE TENER VARIOS EQUIPAJES
+    @OneToMany(mappedBy = "reserva")
+    private List<Equipaje> equipajes = new ArrayList<>();
+
     // CONSTRUCTORES
     public Reserva() {
     }
 
     public Reserva(Cliente cliente, Vuelo vuelo,
-                   Integer numeroPasajeros) {
+            Integer numeroPasajeros) {
         this.cliente = cliente;
         this.vuelo = vuelo;
         this.numeroPasajeros = numeroPasajeros;
@@ -94,5 +101,13 @@ public class Reserva {
 
     public void setPago(Pago pago) {
         this.pago = pago;
+    }
+
+    public List<Equipaje> getEquipajes() {
+        return equipajes;
+    }
+
+    public void setEquipajes(List<Equipaje> equipajes) {
+        this.equipajes = equipajes;
     }
 }
